@@ -1,8 +1,8 @@
 import logging
-import os
 import sys
 from datetime import datetime
-from pathlib import Path
+from nseapi.generic import validate_directory
+import nseapi.constant as c
 
 
 def get_logger(name):
@@ -16,10 +16,10 @@ def get_logger(name):
     logger.setLevel(logging.DEBUG)
 
     c_handler = logging.StreamHandler(stream=sys.stdout)
-    parent_path = Path(__file__).parent.parent
-    file_name = parent_path.joinpath('log')
-    file_name = file_name.joinpath(name + '_' + now_str + '.log')
-    f_handler = logging.FileHandler(file_name)
+    dir_path = c.HOME_DIR_PATH.joinpath('log')
+    validate_directory(dir_path)
+    file_path = dir_path.joinpath(name + '_' + now_str + '.log')
+    f_handler = logging.FileHandler(file_path)
     c_handler.setLevel(logging.DEBUG)
     f_handler.setLevel(logging.INFO)
 
