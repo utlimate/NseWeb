@@ -247,6 +247,24 @@ class OpenInterest:
                 print('timestamp not in keys')
             self.df = data_to_dataframe(data['records']['data'])
         self.expiry_dates = ExpiryDates(self.df['Expiry Date'])
+        self.strike_interval = self.strike_prices[1] - self.strike_prices[0]
+
+    @property
+    def middle(self):
+        df = self.df.iloc[(self.df['Strike Price'] - self.underlying_value).abs().argsort()[:1]]
+        return df['Strike Price']
+
+    @property
+    def middle_strike(self):
+        df = self.middle
+        if len(df['Strike Price'].values) > 1:
+            raise ValueError('More then one strike found')
+        else:
+            return df['Strike Price'].values[0]
+
+    @property
+    def strike_prices(self):
+        return sorted(list(self.df['Strike Price'].unique()))
 
     @property
     def underlying_value(self):
@@ -341,8 +359,6 @@ class OpenInterest:
 
         if not isinstance(expiry_date, datetime):
             raise TypeError('expiry_date must be datetime')
-        else:
-            expiry_date = expiry_date.strftime('%d-%m-%y')
 
         df = self.df[self.df['Expiry Date'] == expiry_date]
 
@@ -350,6 +366,16 @@ class OpenInterest:
             expiry_date = min(pd.to_datetime(self.df['Expiry Date'], dayfirst=True)).date().strftime('%d-%m-%y')
             df = self.df[self.df['Expiry Date'] == expiry_date]
 
+        df = OpenInterest(df)
+        df.time_stamp = self.time_stamp
+        return df
+
+    def trim(self, strikes: int = 5):
+        """ Will trim data to above and below strike from underling value
+        :param strikes: int: default 5
+        :return OpenInerest
+        """
+        df = self.df.iloc[(self.df['Strike Price'] - self.underlying_value).abs().argsort()[:strikes * 2]]
         df = OpenInterest(df)
         df.time_stamp = self.time_stamp
         return df
