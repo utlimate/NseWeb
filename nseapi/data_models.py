@@ -228,13 +228,12 @@ class OpenInterest:
 
     def __init__(self, data):
         self.time_stamp = None
-        self.strike_interval = None
         self.expiry_dates = None
-
-        self._prepare_data(data)
-
-        if isinstance(self.time_stamp, str):
-            self.time_stamp = datetime.strptime(self.time_stamp, '%d-%b-%Y %H:%M:%S')
+        if isinstance(data, OpenInterest):
+            self.df = data.df
+            self.time_stamp = data.time_stamp
+        else:
+            self._prepare_data(data)
 
     def _prepare_data(self, data):
         if isinstance(data, pd.DataFrame):
@@ -247,7 +246,9 @@ class OpenInterest:
                 print('timestamp not in keys')
             self.df = data_to_dataframe(data['records']['data'])
         self.expiry_dates = ExpiryDates(self.df['Expiry Date'])
-        self.strike_interval = self.strike_prices[1] - self.strike_prices[0]
+
+        if isinstance(self.time_stamp, str):
+            self.time_stamp = datetime.strptime(self.time_stamp, '%d-%b-%Y %H:%M:%S')
 
     @property
     def middle(self):
@@ -257,10 +258,10 @@ class OpenInterest:
     @property
     def middle_strike(self):
         df = self.middle
-        if len(df['Strike Price'].values) > 1:
+        if len(df.values) > 1:
             raise ValueError('More then one strike found')
         else:
-            return df['Strike Price'].values[0]
+            return df.values[0]
 
     @property
     def strike_prices(self):
@@ -347,38 +348,61 @@ class OpenInterest:
         df.time_stamp = self.time_stamp
         return df
 
-    def get_by_expiry(self, expiry_date: Union[datetime, str]):
+    def get_by_expiry(self, expiry_date: Union[datetime, str, list]):
         """ To get only data of selected expiry date
 
-        :param expiry_date: (datetime) get all data of data
-        :return OIObj
+        :param expiry_date: (datetime, str, list) get all data of data
+        :return OpenInterest
         """
-
+        df = None
         if isinstance(expiry_date, str):
             expiry_date = datetime.strptime(expiry_date, '%d-%m-%y')
-
-        if not isinstance(expiry_date, datetime):
-            raise TypeError('expiry_date must be datetime')
-
-        df = self.df[self.df['Expiry Date'] == expiry_date]
-
-        if len(df) <= 0:
-            expiry_date = min(pd.to_datetime(self.df['Expiry Date'], dayfirst=True)).date().strftime('%d-%m-%y')
             df = self.df[self.df['Expiry Date'] == expiry_date]
+        elif isinstance(expiry_date, list):
+            expiry_date = [datetime.strptime(e, '%d-%m-%y') for e in expiry_date if isinstance(e, str)]
+            df = self.df.loc[self.df['Expiry Date'].isin(expiry_date)]
+        else:
+            if not isinstance(expiry_date, datetime) and not isinstance(expiry_date, list):
+                raise TypeError('expiry_date must be datetime')
+
+        if len(df) < 1:
+            raise ValueError('Expiry Date not found')
 
         df = OpenInterest(df)
         df.time_stamp = self.time_stamp
         return df
 
     def trim(self, strikes: int = 5):
-        """ Will trim data to above and below strike from underling value
+        """ Will trim data to above and below till strikes from underling value and also inclue middle_strike
         :param strikes: int: default 5
         :return OpenInerest
         """
-        df = self.df.iloc[(self.df['Strike Price'] - self.underlying_value).abs().argsort()[:strikes * 2]]
+        # Get All Strike Price above middle strike price
+        strikes_prices = pd.Series(self.strike_prices)
+        above_strikes = strikes_prices.loc[strikes_prices > self.middle_strike]
+        above_strikes.sort_values(inplace=True)
+        above_strikes = above_strikes.iloc[:strikes]
+
+        # Get all strike price below middle strike price
+        below_strikes = strikes_prices.loc[strikes_prices < self.middle_strike]
+        below_strikes.sort_values(inplace=True, ascending=False)
+        below_strikes = below_strikes.iloc[:strikes]
+
+
+        strikes_prices = pd.concat([above_strikes, below_strikes], ignore_index=True)
+        # Add middle strike price to series
+        strikes_prices = strikes_prices.append(pd.Series([self.middle_strike]), ignore_index=True, verify_integrity=True)
+        strikes_prices.sort_values(inplace=True)
+        strikes_prices.reset_index(drop=True, inplace=True)
+
+        df = self.df.loc[self.df['Strike Price'].isin(strikes_prices.values)]
+        # df = self.df.iloc[(self.df['Strike Price'] - self.underlying_value).abs().argsort()[:strikes * 2]]
         df = OpenInterest(df)
         df.time_stamp = self.time_stamp
         return df
+
+    def to_dict(self):
+        return self.df.to_dict(orient='records')
 
     def __str__(self):
         return self.df.__str__()

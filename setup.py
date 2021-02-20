@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='NseWeb',
-    version='0.0.2',
+    version='0.0.4',
     packages=['nseapi'],
     url='https://github.com/sachgbhatiya/NseWeb',
     license='',

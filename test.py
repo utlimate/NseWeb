@@ -11,5 +11,6 @@ oi = nse.get_oi('nifty', index=True)
 # ed = ExpiryDates(oi.df['Expiry Date'])
 # ed_weekly = ed.near_expiry.weekly_expiry
 # near = oi.near_expriry
-next_current = oi.near_expriry.current_expiry
+near_next = oi.get_by_expiry(['25-02-21', '04-03-21'])
+next_current = oi.trim()
 print('Test')
