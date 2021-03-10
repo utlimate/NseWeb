@@ -236,6 +236,8 @@ class OpenInterest:
             self._prepare_data(data)
 
     def _prepare_data(self, data):
+        if data is None:
+            raise ValueError('data is None')
         if isinstance(data, pd.DataFrame):
             self.df = pd.DataFrame(data)
         else:
@@ -433,10 +435,10 @@ class IndexStocks:
     """ Hold all symbols details for indices """
 
     def __init__(self):
-        self.symbols = pd.DataFrame()
+        self.data = pd.DataFrame()
 
     def get_prev_close(self, symbol):
-        data = self.symbols[self.symbols['symbol'] == symbol]['previousClose']
+        data = self.data[self.data['symbol'] == symbol]['previousClose']
         if data.empty:
             raise KeyError('{} not in symbols'.format(data))
         else:
@@ -447,7 +449,7 @@ class IndexStocks:
 
         :return: list
         """
-        df = self.symbols.loc[self.symbols['priority'] == 0]
+        df = self.data.loc[self.data['priority'] == 0]
         df.sort_values(['identifier'], ascending=bool, inplace=True)
         return list(df['symbol'])
 
@@ -456,7 +458,7 @@ class IndexStocks:
 
         :return: list
         """
-        df = self.symbols.loc[self.symbols['priority'] == 1]
+        df = self.data.loc[self.data['priority'] == 1]
         df.sort_values(['identifier'], ascending=bool, inplace=True)
         return list(df['symbol'])
 
@@ -483,23 +485,41 @@ class IndexStocks:
         :param data: (dict)
         :return: self
         """
-        if self.symbols.empty:
-            self.symbols = pd.DataFrame(data['data'])
+        if self.data.empty:
+            self.data = pd.DataFrame(data['data'])
         else:
             # Append Data to symbols
             df = self.prepare_data(data['data'])
-            self.symbols = self.symbols.append(df, ignore_index=True)
+            self.data = self.data.append(df, ignore_index=True)
 
         # Replace index symbol
         index_name = data['metadata']['indexName']
 
         # Drop meta column. Meta column has dict. Which cause TypeError in drop_duplicates
-        self.symbols.drop(['meta'], axis=1, inplace=True)
-        self.symbols.drop_duplicates(inplace=True)
+        self.data.drop(['meta'], axis=1, inplace=True)
+        self.data.drop_duplicates(inplace=True)
 
-        self.symbols.symbol[self.symbols.symbol == index_name] = c.NAME_TO_INDICES[index_name]
-        self.symbols.sort_values(['identifier'], ascending=bool)
+        self.data.symbol[self.data.symbol == index_name] = c.NAME_TO_INDICES[index_name]
+        self.data.sort_values(['identifier'], ascending=bool)
         return self
+
+    def __str__(self):
+        return self.data.__str__()
+
+    def __repr__(self):
+        return self.data.__repr__()
+
+    def __iter__(self):
+        return self.data.__iter__()
+
+    def __getitem__(self, item):
+        return self.data.__getitem__(item)
+
+    def __setitem__(self, key, value):
+        self.data.__setitem__(key, value)
+
+    def __len__(self):
+        return self.data.__len__()
 
 
 class ExpiryDates:
