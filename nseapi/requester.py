@@ -40,6 +40,14 @@ class NseApi:
     RETRY_INTERVAL = 0.5    # In seconds
     MAX_RETRY = 3
     TIMEOUT = 10
+    REQUEST_EXCEPTION = (requests.exceptions.Timeout,
+                         requests.exceptions.ConnectionError,
+                         requests.exceptions.HTTPError,
+                         urllib3.exceptions.ReadTimeoutError,
+                         urllib3.exceptions.MaxRetryError,
+                         socket.gaierror,
+                         urllib3.exceptions.NewConnectionError
+                         )
 
     def __init__(self, log_info=None, logger=None, save_path=None):
         self._internet_connectivity = False
@@ -55,6 +63,7 @@ class NseApi:
         self.log_info = log_info
         self.session = requests.Session()
         self.session.headers.update(c.HEADER)
+        self.main_page_loaded = False
         self._load_main_page()
 
     def get_oi(self, symbol: str, index: bool):
@@ -83,20 +92,29 @@ class NseApi:
         if self.log_info:
             self.logger.info('Requesting stock list of Index')
 
+        none_result = set()
         for i in indices_symbols:
             i = c.INDICES_TO_NAME[i.upper()]
             params = {'index': i}
             res = self._get(c.URL_STOCK_LIST, params=params, request_name='Stock List')
-            self.symbols_details.add_data(res)
-        return self.symbols_details
+            if res is not None:
+                self.symbols_details.add_data(res)
+            else:
+                self.logger.error(f'Indices: {i} has none response')
+                none_result.add(res)
+        if len(none_result) > 0:
+            self.logger.error(f"indices: {str(indices_symbols)} has one or more than none response")
+            return None
+        else:
+            return self.symbols_details
 
     def _load_main_page(self):
-        if self.log_info:
-            self.logger.info('Requesting main page')
-        # res = self.session.get(c.URL_MAIN)
-        res = self._get(c.URL_MAIN, request_name="Main Page", timeout=self.TIMEOUT)
-        if res is not None:
+        try:
+            if self.log_info:
+                self.logger.info('Requesting main page')
+            res = self.session.get(c.URL_MAIN, timeout=self.TIMEOUT)
             if validate_res(res):
+                self.main_page_loaded = True
                 dir_path = c.HOME_DIR_PATH.joinpath('bin')
                 validate_directory(dir_path)
                 file_path = dir_path.joinpath('main_page_cookies.pickle')
@@ -106,50 +124,48 @@ class NseApi:
                     self.logger.info('Main Page loaded')
             else:
                 if self.log_info:
-                    self.logger.info('Main Page loading Failed - Not valid response')
-        else:
-            self.logger.info('Main Page loading failed - response if none')
+                    self.logger.error(f'Main Page loading Failed - Not valid response, Status Code: {res.status_code}')
+        except self.REQUEST_EXCEPTION as e:
+            self.logger.error(f'Network error in load Main Page')
+        except Exception:
+            self.logger.exception('Load Main page has an error', exc_info=True)
 
     def _get(self, url, params=None, request_name=None, timeout=TIMEOUT):
-        """ Return response in dictionary format
-
-        :param url: (str) url
-        :param params: (dict) parameters of url
-        :return: (dict) json
-        """
-        retry_counter = 1
-        while retry_counter <= self.MAX_RETRY:
-
+        res_data = None
+        for i in range(1, self.MAX_RETRY + 1):
             if self.log_info:
-                self.logger.info('Sending Request - Try: {}, {}: {}'.format(retry_counter, request_name, str(params)))
+                self.logger.info(f'Sending Request - Try: {i}, {request_name}: {str(params)}')
+
             try:
-                retry_counter += 1
-                res = self.session.get(url, params=params, timeout=timeout)
-                if validate_res(res):
-                    try:
-                        if request_name == 'Main Page':
-                            res_data = res
-                        else:
-                            res_data = res.json()
-                    except json.decoder.JSONDecodeError as e:
-                        self.logger.exception('{}: {}'.format(request_name, str(params)), exc_info=True)
-                        continue
-                    if self.log_info:
-                        self.logger.info('Response Received - {}: {}'.format(request_name, str(params)))
-                    return res_data
+                if self.main_page_loaded:
+                    res = self.session.get(url, params=params, timeout=timeout)
+                    if validate_res(res):
+                        res_data = res.json()
+
+                        if self.log_info:
+                            self.logger.info(f'Response Received - {request_name}: {str(params)}')
+                        break   # breaking loop on successfull response
+                    else:
+                        self.logger.error(f'{request_name}: Not Validate Response, Status Code: {res.status_code}')
+                        t.sleep(self.RETRY_INTERVAL)
+                        self.main_page_loaded = False
+                        self._load_main_page()
                 else:
-                    self.logger.error('Not Validate Response - {}: {}'.format(request_name, str(params)))
-                    t.sleep(self.RETRY_INTERVAL)
+                    self.logger.error('Main Page still not loaded. Load Main Page First')
                     self._load_main_page()
 
-            except (urllib3.exceptions.ReadTimeoutError, requests.exceptions.ConnectionError,
-                    urllib3.exceptions.MaxRetryError, socket.gaierror, urllib3.exceptions.NewConnectionError) as rc:
-                return None
+            except self.REQUEST_EXCEPTION as rc:
+                self.logger.error(f'{request_name}: has network error')
                 break
+            except json.decoder.JSONDecodeError as e:
+                self.logger.exception(f'{request_name}: Not Valid Json Data')
             except Exception as e:
+                self.main_page_loaded = False
                 t.sleep(self.RETRY_INTERVAL)
                 self._load_main_page()
-                self.logger.exception('{}: {}'.format(request_name, str(params)), exc_info=True)
+                self.logger.exception(f'Name:{request_name}, Params: {params}', exc_info=True)
+
+        return res_data
 
     def _load_main_page_cookies(self):
         try:
