@@ -7,3 +7,6 @@
 *.txt
 *.egg
 NseWeb.egg-info
+__pycache__
+build
+test.py

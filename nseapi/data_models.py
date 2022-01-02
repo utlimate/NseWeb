@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Union
 import pandas as pd
+import numpy as np
 import nseapi.constant as c
 pd.options.mode.chained_assignment = None  # default='warn'
 
@@ -105,131 +106,13 @@ def data_to_dataframe(data: dict):
     rename_columns(df)
     return df
 
-
-class OIObj:
-    """ Data object for nse res
-        Parse data in parameters """
-
-    def __init__(self, data, underlying_value=None, time_stamp=None):
-        self.underlying_value = underlying_value
-        self.time_stamp = time_stamp
-
-        if isinstance(data, pd.DataFrame):
-            self.df = pd.DataFrame(data)
-        else:
-            self._parse_dict(data)
-
-        if isinstance(self.time_stamp, str):
-            self.time_stamp = datetime.strptime(self.time_stamp, '%d-%b-%Y %H:%M:%S')
-
-    def _parse_dict(self, data):
-        data = normalize_oi_data(data)
-        try:
-            self.underlying_value = data['records']['underlyingValue']
-        except KeyError:
-            print('underlyingValue not in keys')
-
-        try:
-            self.time_stamp = data['records']['timestamp']
-        except KeyError:
-            print('timestamp not in keys')
-
-        self.df = data_to_dataframe(data['records']['data'])
-        self.filtered_df = data_to_dataframe(data['filtered']['data'])
-
-    @property
-    def time_string(self):
-        """ Return time in 24h string"""
-        return self.time_stamp.time().strftime('%H:%M:%S')
-
-    @property
-    def date_string(self):
-        """ Return date in string """
-        return self.time_stamp.date().strftime('%d-%b-%Y')
-
-    @property
-    def expiry_dates(self):
-        """ Get expiry_dates from data
-        :exception ValueError: if there is more than one expiry date in data
-        return Expi
-        """
-        return list(set(self.df['Expiry Date'].values))
-
-    @property
-    def symbol(self):
-        ticker = list(set(self.df['Underlying']))
-        if len(ticker) > 1:
-            raise ValueError("More than one symbol found")
-        return ticker[0]
-
-    def get_by_strike(self, price, condition: str = 'equal'):
-        """ Get data above or below or equal to price
-        :param price: (float, int): price from which to perform action
-        :param condition: (str): which condition to perform. (above, below or equal are valid)
-        """
-        if condition.lower() == 'equal':
-            return OIObj(self.df[self.df['Strike Price'] == price], self.underlying_value, self.time_stamp)
-        elif condition.lower() == 'above':
-            return OIObj(self.df[self.df['Strike Price'] > price], self.underlying_value, self.time_stamp)
-        elif condition.lower() == 'below':
-            return OIObj(self.df[self.df['Strike Price'] < price], self.underlying_value, self.time_stamp)
-
-    def get_by_expiry(self, expiry_date: Union[datetime, str]):
-        """ To get only data of selected expiry date
-
-        :param expiry_date: (datetime) get all data of data
-        :return OIObj
-        """
-
-        if isinstance(expiry_date, str):
-            expiry_date = datetime.strptime(expiry_date, '%d-%m-%y')
-
-        if not isinstance(expiry_date, datetime):
-            raise TypeError('expiry_date must be datetime')
-        else:
-            expiry_date = expiry_date.strftime('%d-%m-%y')
-
-        df = self.df[self.df['Expiry Date'] == expiry_date]
-
-        if len(df) <= 0:
-            expiry_date = min(pd.to_datetime(self.df['Expiry Date'], dayfirst=True)).date().strftime('%d-%m-%y')
-            df = self.df[self.df['Expiry Date'] == expiry_date]
-
-        return OIObj(df, self.underlying_value, self.time_stamp)
-
-    def __str__(self):
-        return self.df.__str__()
-
-    def __repr__(self):
-        return self.df.__repr__()
-
-    def __iter__(self):
-        return self.df.__iter__()
-
-    def __getitem__(self, item):
-        return self.df.__getitem__(item)
-
-    def __setitem__(self, key, value):
-        self.df.__setitem__(key, value)
-
-    def __len__(self):
-        return self.df.__len__()
-
-    def __call__(self, *args, **kwargs):
-        return self.df
-
-    # def __getattr__(self, item):
-    #     return self.df.__getattr__(item)
-
-
-class OpenInterest:
-    """ Data object for nse res
-        Parse data in parameters """
+class OptionChain:
+    """ Hold Option Chain Data for symbol """
 
     def __init__(self, data):
         self.time_stamp = None
         self.expiry_dates = None
-        if isinstance(data, OpenInterest):
+        if isinstance(data, OptionChain):
             self.df = data.df
             self.time_stamp = data.time_stamp
         else:
@@ -253,85 +136,102 @@ class OpenInterest:
             self.time_stamp = datetime.strptime(self.time_stamp, '%d-%b-%Y %H:%M:%S')
 
     @property
-    def middle(self):
+    def middle_strike(self) -> Union[np.int64, np.float64, np.float32, np.int, np.float]:
         df = self.df.iloc[(self.df['Strike Price'] - self.underlying_value).abs().argsort()[:1]]
-        return df['Strike Price']
-
-    @property
-    def middle_strike(self):
-        df = self.middle
-        if len(df.values) > 1:
+        df = df['Strike Price']
+        if len(df.unique()) > 1:
             raise ValueError('More then one strike found')
         else:
             return df.values[0]
 
     @property
-    def strike_prices(self):
+    def strike_prices(self) -> list:
+        """ Return list of sorted Stike Prices
+
+        Returns:
+            list: Sorted list of strike prices
+        """        
         return sorted(list(self.df['Strike Price'].unique()))
 
     @property
-    def underlying_value(self):
+    def underlying_value(self) -> Union[float, int]:
+        """ Return underlying value of the symbol
+
+        Raises:
+            ValueError: if there is more than one symbol
+
+        Returns:
+            [float or int]:
+        """
         ticker = list(set(self.df['Underlying Value']))
         if len(ticker) > 1:
             raise ValueError("More than one symbol found")
         return ticker[0]
 
     @property
-    def time_string(self):
+    def time_string(self) -> str:
         """ Return time in 24h string"""
         return self.time_stamp.time().strftime('%H:%M:%S')
 
     @property
-    def date_string(self):
+    def date_string(self) -> str:
         """ Return date in string """
         return self.time_stamp.date().strftime('%d-%b-%Y')
 
     @property
-    def symbol(self):
+    def symbol(self) -> str:
+        """ Return underlying symbol
+
+        Raises:
+            ValueError: If there is more than one symbol in option chain
+
+        Returns:
+            [str]: like nifty, reliance
+        """
         ticker = list(set(self.df['Underlying']))
         if len(ticker) > 1:
             raise ValueError("More than one symbol found")
         return ticker[0]
 
     @property
-    def near_expriry(self):
+    def near_expriry(self) -> 'OptionChain':
         df = self.df.loc[self.df['Expiry Date'].isin(self.expiry_dates.near_expiry.values)]
-        df = OpenInterest(df)
+        df = self.__class__(df)
         df.time_stamp = self.time_stamp
         return df
 
     @property
-    def next_expiry(self):
+    def next_expiry(self) -> 'OptionChain':
         df = self.df.loc[self.df['Expiry Date'].isin(self.expiry_dates.next_expiry.values)]
-        df = OpenInterest(df)
+        df = self.__class__(df)
         df.time_stamp = self.time_stamp
         return df
 
     @property
-    def far_expiry(self):
+    def far_expiry(self) -> 'OptionChain':
         df = self.df.loc[self.df['Expiry Date'].isin(self.expiry_dates.far_expiry.values)]
-        df = OpenInterest(df)
+        df = self.__class__(df)
         df.time_stamp = self.time_stamp
         return df
 
     @property
-    def monthly_expiry(self):
+    def monthly_expiry(self) -> 'OptionChain':
         df = self.df.loc[self.df['Expiry Date'].isin(self.expiry_dates.monthly_expiry.values)]
-        df = OpenInterest(df)
+        df = self.__class__(df)
         df.time_stamp = self.time_stamp
         return df
 
     @property
-    def weekly_expiry(self):
+    def weekly_expiry(self) -> 'OptionChain':
         df = self.df.loc[self.df['Expiry Date'].isin(self.expiry_dates.weekly_expiry.values)]
-        df = OpenInterest(df)
+        df = self.__class__(df)
         df.time_stamp = self.time_stamp
         return df
 
     @property
-    def current_expiry(self):
+    def current_expiry(self) -> 'OptionChain':
         df = self.df.loc[self.df['Expiry Date'].isin(self.expiry_dates.current_expiry.values)]
-        df = OpenInterest(df)
+        df = self.__class__(df)
         df.time_stamp = self.time_stamp
         return df
 
@@ -342,11 +242,11 @@ class OpenInterest:
         """
         df = None
         if condition.lower() == 'equal':
-            df = OpenInterest(self.df[self.df['Strike Price'] == price])
+            df = OptionChain(self.df[self.df['Strike Price'] == price])
         elif condition.lower() == 'above':
-            df = OpenInterest(self.df[self.df['Strike Price'] > price])
+            df = OptionChain(self.df[self.df['Strike Price'] > price])
         elif condition.lower() == 'below':
-            df = OpenInterest(self.df[self.df['Strike Price'] < price])
+            df = OptionChain(self.df[self.df['Strike Price'] < price])
         df.time_stamp = self.time_stamp
         return df
 
@@ -370,7 +270,7 @@ class OpenInterest:
         if len(df) < 1:
             raise ValueError('Expiry Date not found')
 
-        df = OpenInterest(df)
+        df = OptionChain(df)
         df.time_stamp = self.time_stamp
         return df
 
@@ -399,7 +299,7 @@ class OpenInterest:
 
         df = self.df.loc[self.df['Strike Price'].isin(strikes_prices.values)]
         # df = self.df.iloc[(self.df['Strike Price'] - self.underlying_value).abs().argsort()[:strikes * 2]]
-        df = OpenInterest(df)
+        df = OptionChain(df)
         df.time_stamp = self.time_stamp
         return df
 

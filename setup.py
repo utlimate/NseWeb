@@ -1,8 +1,9 @@
 from setuptools import setup
+import nseapi
 
 setup(
     name='NseWeb',
-    version='0.0.4',
+    version=nseapi.__version__,
     packages=['nseapi'],
     url='https://github.com/sachgbhatiya/NseWeb',
     license='',
