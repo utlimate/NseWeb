@@ -1,6 +1,6 @@
 from nseapi import NseApi
 from nseapi.data_models import ExpiryDates
-import pandas as pd
+
 
 from nseapi.data_models import OpenInterest
 

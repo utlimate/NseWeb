@@ -12,5 +12,5 @@ setup(
     description='For Download Open Interest Data from NSE website',
     install_requires=['pandas',
                       'numpy',
-                      'requests']
+                      'aiohttp[speedups]']
 )
