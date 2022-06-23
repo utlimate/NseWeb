@@ -1,14 +1,15 @@
 import os
+from urllib.parse import urljoin
 import json
 import pickle
-import requests
-import urllib3
+import threading
+import aiohttp
 import nseapi.constant as c
 from nseapi.logger import get_logger
 from nseapi.data_models import IndexStocks, OptionChain
 import time as t
-import socket
-from nseapi.generic import validate_directory
+import asyncio
+from nseapi.generic import validate_directory, validate_status, AsyncLoopThread
 import logging as _logging
 
 
@@ -36,20 +37,13 @@ def validate_res(res):
     else:
         return False
 
+
 class NseApi:
     RETRY_INTERVAL = 0.5    # In seconds
     MAX_RETRY = 3
     TIMEOUT = 10
-    REQUEST_EXCEPTION = (requests.exceptions.Timeout,
-                         requests.exceptions.ConnectionError,
-                         requests.exceptions.HTTPError,
-                         urllib3.exceptions.ReadTimeoutError,
-                         urllib3.exceptions.MaxRetryError,
-                         socket.gaierror,
-                         urllib3.exceptions.NewConnectionError
-                         )
 
-    def __init__(self, debug: bool=False, save_path=None, cache: bool = False):
+    def __init__(self, debug: bool=False, log_path=None, cache: bool = False):
         """ NSE website scrapper
 
         Args:
@@ -60,14 +54,14 @@ class NseApi:
         self._internet_connectivity = False
         self.__cache = cache
         self.__cache_path = None
-
-        self.logger = get_logger('NseApi', save_path)
+        self._loop = asyncio.get_event_loop()
+        self._loop_thread = threading.Thread(target = self._loop.run_forever, daemon=True, name="asyncio_loop")
+        self.logger = get_logger('NseApi', log_path)
+        self._request_dir = {}
         if not debug:
             self.logger.setLevel(_logging.WARNING)
-
         self.symbols_details = IndexStocks()
-        self.session = requests.Session()
-        self.session.headers.update(c.HEADER)
+        self.session = aiohttp.Session(headers=c.HEADER)
         self.main_page_loaded = False
         self._validate_directories()
         self.init()
@@ -124,7 +118,10 @@ class NseApi:
         """ this will load main page of nse website
         """
         try:
-            self.logger.debug('main page - Requesting ')
+            self._loop_thread.start()
+
+
+
             res = self.session.get(c.URL_MAIN, timeout=self.TIMEOUT)
             if validate_res(res):
                 self.main_page_loaded = True
@@ -141,7 +138,17 @@ class NseApi:
         except Exception:
             self.logger.exception('Main page - has an error', exc_info=True)
 
-    def _get(self, url, params=None, request_name=None, timeout=TIMEOUT):
+    async def main_page(self):
+        """ Load main page """
+
+        res = await self.session.get(c.URL_MAIN)
+        if validate_status(res):
+            self.main_page_loaded = True
+            return True
+        else:
+            return False
+        
+    async def _get(self, url, params=None, request_name=None, timeout=TIMEOUT):
         res_data = None
         for i in range(1, self.MAX_RETRY + 1):
             self.logger.debug(f'{request_name} - Sending Request - Try: {i} - params: {str(params)}')
@@ -187,3 +194,92 @@ class NseApi:
                     self.session.cookies = pickle.load(f)
             except FileNotFoundError:
                 self.init()
+
+    def shutdown(self):
+        self._loop.call_soon_threadsafe(self.session.close())
+        self._loop.call_soon_threadsafe(self._loop.stop())
+        return True
+
+
+class NseApiAsync:
+    RETRY_INTERVAL = 0.5    # In seconds
+    MAX_RETRY = 3
+    TIMEOUT = 10
+
+    def __init__(self, log_path: str = None) -> None:
+        self.session = aiohttp.ClientSession(headers=c.HEADER_NSE)
+        self.logger = get_logger('NseApiAsync', log_path)
+        self.main_page_loaded = False
+
+    async def _get(self, url, params=None, request_name=None, timeout=TIMEOUT):
+        res_data = None
+        for i in range(1, self.MAX_RETRY + 1):
+            self.logger.debug(f'{request_name} - Sending Request - Try: {i} - params: {str(params)}')
+
+            try:
+                if request_name == 'main':
+                    async with self.session.get(url=url) as res:
+                        if validate_res(res):
+                            res_data = True
+                            break
+                        else:
+                            self.logger.error(f'{request_name}: Status Code: {res.status_code}')
+                            t.sleep(self.RETRY_INTERVAL)
+                            self.main_page_loaded = False
+                else:
+                    if self.main_page_loaded:
+                        res = await self.session.get(url, params=params, timeout=timeout)
+                        if res.ok:
+                            self.logger.debug(f"{request_name}: Response Received")
+                            res_data = await res.json()
+                            res.close()
+                            break
+                        else:
+                            self.logger.error(f'{request_name}: Status Code: {res.status}')
+                            t.sleep(self.RETRY_INTERVAL)
+                            self.main_page_loaded = False
+                    else:
+                        self.logger.error('Main Page is not loaded. Loading Main Page')
+                        await self.main()
+
+            except Exception as e:
+                self.logger.exception(f'Name:{request_name}, Params: {params}', exc_info=True)
+                t.sleep(self.RETRY_INTERVAL)
+                
+        if not self.main_page_loaded:
+            await self.main()
+
+        self.logger.debug(f'{request_name} - Response Received {str(params)}')
+        return res_data
+
+    async def main(self):
+        """ Loading Main Page """
+        self.logger.debug("Loading Main Page")
+        res = await self.session.get(c.URL_MAIN)
+        if validate_status(res):
+            self.main_page_loaded = True
+            self.logger.debug("Loading Main Page Successfull")
+            return True
+        else:
+            self.logger.error(f"Loading Main Page Unsuccessful: Status Code - {res.status}")
+            return False
+
+    async def option_chain(self, symbol: str, index: bool):
+        """
+        option_chain Get Option Chain Data
+
+        Args:
+            symbol (str): like NIFTY
+            index (bool): True if symbol is index or False
+        """
+        url = None
+
+        if index:
+            url = urljoin(c.URL_MAIN, c.PATH_OI_INDICES)
+        else:
+            url = urljoin(c.URL_MAIN, c.PATH_OI_EQUITIES)
+
+        return await self._get(url, {'symbol': symbol}, 'option_chain')
+
+    async def market_turnover(self):
+        return await self._get(urljoin(c.URL_MAIN, c.PATH_TURNOVER), request_name='market_turnover')
