@@ -18,20 +18,20 @@ futs = []
 loop_thread = threading.Thread(target = loop.run_forever, daemon=True)
 loop_thread.start()
 
-task_main = loop.create_task(nse.main())
+# task_main = loop.create_task(nse.main())
 
 
-while not task_main.done():
-    pass
+# while not task_main.done():
+#     pass
 
 # Option Interest
 futs.append(
         asyncio.run_coroutine_threadsafe(nse.market_turnover(), loop=loop)
     )
 
-# futs.append(
-#     asyncio.run_coroutine_threadsafe(get_oi(URL_OC1), loop=loop)
-# )
+futs.append(
+    asyncio.run_coroutine_threadsafe(nse.option_chain("NIFTY", True), loop=loop)
+)
 
 # futs.append(
 #     asyncio.run_coroutine_threadsafe(turn_over(), loop=loop)

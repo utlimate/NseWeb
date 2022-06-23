@@ -217,39 +217,21 @@ class NseApiAsync:
             self.logger.debug(f'{request_name} - Sending Request - Try: {i} - params: {str(params)}')
 
             try:
-                if request_name == 'main':
-                    async with self.session.get(url=url) as res:
-                        if validate_res(res):
-                            res_data = True
-                            break
-                        else:
-                            self.logger.error(f'{request_name}: Status Code: {res.status_code}')
-                            t.sleep(self.RETRY_INTERVAL)
-                            self.main_page_loaded = False
+                res = await self.session.get(url, params=params, timeout=timeout)
+                if res.ok:
+                    self.logger.debug(f"{request_name}: Response Received")
+                    res_data = await res.json()
+                    res.close()
+                    break
                 else:
-                    if self.main_page_loaded:
-                        res = await self.session.get(url, params=params, timeout=timeout)
-                        if res.ok:
-                            self.logger.debug(f"{request_name}: Response Received")
-                            res_data = await res.json()
-                            res.close()
-                            break
-                        else:
-                            self.logger.error(f'{request_name}: Status Code: {res.status}')
-                            t.sleep(self.RETRY_INTERVAL)
-                            self.main_page_loaded = False
-                    else:
-                        self.logger.error('Main Page is not loaded. Loading Main Page')
-                        await self.main()
+                    self.logger.error(f'{request_name}: Status Code: {res.status}')
+                    t.sleep(self.RETRY_INTERVAL)
+                    self.main_page_loaded = False
 
             except Exception as e:
                 self.logger.exception(f'Name:{request_name}, Params: {params}', exc_info=True)
                 t.sleep(self.RETRY_INTERVAL)
-                
-        if not self.main_page_loaded:
-            await self.main()
-
-        self.logger.debug(f'{request_name} - Response Received {str(params)}')
+    
         return res_data
 
     async def main(self):
