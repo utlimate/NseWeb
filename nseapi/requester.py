@@ -205,6 +205,9 @@ class NseApi:
 
 
 class NseApiAsync:
+    SECTION_TRADEINFO = "trade_info"
+    SECTION_CORPINFO = "corp_info"
+
     RETRY_INTERVAL = 0.5    # In seconds
     MAX_RETRY = 3
     TIMEOUT = 4
@@ -279,12 +282,17 @@ class NseApiAsync:
     async def search(self, symbol: str):
         return await self._get(url=c.URL_API + c.PATH_SEARCH, params={'q': symbol}, request_name='search')
 
-    async def get_quote(self, symbol: str):
-        return await self._get(url=c.URL_API + c.PATH_GET_QUOTE, params={'symbol': symbol.upper()}, request_name='get_quote')
+    async def quote(self, symbol: str, section='trade_info'):
+        return await self._get(url=c.URL_API + c.PATH_GET_QUOTE, params={'symbol': symbol.upper(), 'section': section}, request_name='get_quote')
 
     async def corp_info(self, symbol):
         return await self._get(url=c.URL_API + c.PATH_GET_QUOTE, params={'symbol': symbol.upper(), 'section':'corp_info'}, request_name='get_quote')
 
+    async def chartdata_index(self, symbol: str, index: bool, preopen: False):
+        return await self._get(url=c.URL_API + c.PATH_CHARTDATA_INDEX, params={'symbol': symbol.upper(), "indices":"true", "preopen": preopen}, request_name='chartdata_by_index')
+
+    async def market_status(self):
+        return await self._get(url=c.URL_API + c.PATH_MARKETSTATUS, params=None, request_name='market_status')
 
 class Ticker():
     def __init__(self, *args, **kwargs) -> None:

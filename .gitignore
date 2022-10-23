@@ -8,4 +8,8 @@
 *.egg
 NseWeb.egg-info
 __pycache__
+dist
 build
+ddo_ahd.csv
+.gitignore
+nseapi/import csv.py

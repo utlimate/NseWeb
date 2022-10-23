@@ -15,6 +15,8 @@ PATH_OI_EQUITIES = "/option-chain-equities"
 PATH_TURNOVER = "/market-turnover"
 PATH_SEARCH = "/search/autocomplete"
 PATH_GET_QUOTE = "/quote-equity"
+PATH_CHARTDATA_INDEX = "/chart-databyindex"
+PATH_MARKETSTATUS = "/marketStatus"
 
 HEADER_NSE = {
     'accept-language': 'en-GB;q=0.5',
