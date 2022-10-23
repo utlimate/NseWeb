@@ -268,6 +268,41 @@ class NseApiAsync:
         Args:
             symbol (str): like NIFTY
             index (bool): True if symbol is index or False
+        
+        Returns:
+            dict: {
+                'records': {
+                    'expiryDates': [str(dd-mmm-yyyy)],
+                    'data': [
+                        {'strikePrice': 7500,
+                            'expiryDate': '29-Dec-2022',
+                            'PE': {'strikePrice': 7500,
+                            'expiryDate': '29-Dec-2022',
+                            'underlying': 'NIFTY',
+                            'identifier': 'OPTIDXNIFTY29-12-2022PE7500.00',
+                            'openInterest': 53,
+                            'changeinOpenInterest': 0,
+                            'pchangeinOpenInterest': 0,
+                            'totalTradedVolume': 0,
+                            'impliedVolatility': 0,
+                            'lastPrice': 3.05,
+                            'change': 0,
+                            'pChange': 0,
+                            'totalBuyQuantity': 1950,
+                            'totalSellQuantity': 0,
+                            'bidQty': 750,
+                            'bidprice': 0.8,
+                            'askQty': 0,
+                            'askPrice': 0,
+                            'underlyingValue': 17576.3},
+                            .......
+                    ]
+                    , 'timestamp': '21-Oct-2022 15:30:00',
+                    'underlyingValue': 17576.3,
+                    'strikePrices': [float]
+                },
+                'filtered'
+            }
         """
         url = None
 
