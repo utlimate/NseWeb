@@ -17,6 +17,9 @@ PATH_SEARCH = "/search/autocomplete"
 PATH_GET_QUOTE = "/quote-equity"
 PATH_CHARTDATA_INDEX = "/chart-databyindex"
 PATH_MARKETSTATUS = "/marketStatus"
+PATH_META_INFO = "/equity-meta-info"
+PATH_MASTER = "/master-quote"
+PATH_DAILY_REPORT = "/merged-daily-reports"
 
 HEADER_NSE = {
     'accept-language': 'en-GB;q=0.5',
