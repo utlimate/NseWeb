@@ -1,4 +1,6 @@
 import os
+from turtle import Turtle
+from typing import Any
 from urllib.parse import urljoin
 import json
 import pickle
@@ -11,6 +13,7 @@ import time as t
 import asyncio
 from nseapi.generic import validate_directory, validate_status, AsyncLoopThread
 import logging as _logging
+import collections
 
 
 def gen_cookie_from_main_page(res):
@@ -204,7 +207,7 @@ class NseApi:
 class NseApiAsync:
     RETRY_INTERVAL = 0.5    # In seconds
     MAX_RETRY = 3
-    TIMEOUT = 10
+    TIMEOUT = 4
 
     def __init__(self, log_path: str = None) -> None:
         self.session = aiohttp.ClientSession(headers=c.HEADER_NSE)
@@ -213,8 +216,10 @@ class NseApiAsync:
 
     async def _get(self, url, params=None, request_name=None, timeout=TIMEOUT):
         res_data = None
-        for i in range(1, self.MAX_RETRY + 1):
-            self.logger.debug(f'{request_name} - Sending Request - Try: {i} - params: {str(params)}')
+        tryNo = 1
+        while True:
+        # for i in range(1, self.MAX_RETRY + 1):
+            self.logger.debug(f'{request_name} - Sending Request - Try: {tryNo} - params: {str(params)}')
 
             try:
                 res = await self.session.get(url, params=params, timeout=timeout)
@@ -225,12 +230,17 @@ class NseApiAsync:
                     break
                 else:
                     self.logger.error(f'{request_name}: Status Code: {res.status}')
-                    t.sleep(self.RETRY_INTERVAL)
-                    self.main_page_loaded = False
+                    # To avoid unauthorized error
+                    if res.status == 401:
+                        if not self.main_page_loaded:
+                            await self.main()
+                    # await asyncio.sleep(self.RETRY_INTERVAL)
 
             except Exception as e:
                 self.logger.exception(f'Name:{request_name}, Params: {params}', exc_info=True)
                 t.sleep(self.RETRY_INTERVAL)
+            
+            tryNo += 1
     
         return res_data
 
@@ -257,11 +267,26 @@ class NseApiAsync:
         url = None
 
         if index:
-            url = urljoin(c.URL_MAIN, c.PATH_OI_INDICES)
+            url = c.URL_API + c.PATH_OI_INDICES
         else:
-            url = urljoin(c.URL_MAIN, c.PATH_OI_EQUITIES)
+            url = c.URL_API + c.PATH_OI_EQUITIES
 
-        return await self._get(url, {'symbol': symbol}, 'option_chain')
+        return await self._get(url, {'symbol': symbol.upper()}, 'option_chain')
 
     async def market_turnover(self):
-        return await self._get(urljoin(c.URL_MAIN, c.PATH_TURNOVER), request_name='market_turnover')
+        return await self._get(c.URL_API + c.PATH_TURNOVER, request_name='market_turnover')
+
+    async def search(self, symbol: str):
+        return await self._get(url=c.URL_API + c.PATH_SEARCH, params={'q': symbol}, request_name='search')
+
+    async def get_quote(self, symbol: str):
+        return await self._get(url=c.URL_API + c.PATH_GET_QUOTE, params={'symbol': symbol.upper()}, request_name='get_quote')
+
+    async def corp_info(self, symbol):
+        return await self._get(url=c.URL_API + c.PATH_GET_QUOTE, params={'symbol': symbol.upper(), 'section':'corp_info'}, request_name='get_quote')
+
+
+class Ticker():
+    def __init__(self, *args, **kwargs) -> None:
+        for k, v in kwargs.items():
+            setattr(self, k, v)

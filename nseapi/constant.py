@@ -3,15 +3,18 @@ TODAY_DATE = None
 
 
 URL_MAIN = "https://www.nseindia.com"
+URL_API = URL_MAIN + "/api"
 URL_INDICES = "https://www.nseindia.com/api/option-chain-indices"
 URL_EQUITIES = "https://www.nseindia.com/api/option-chain-equities"
 URL_MAIN = "https://www.nseindia.com"
 URL_STOCK_LIST = "https://www.nseindia.com/api/equity-stockIndices"
 URL_BANKNIFTY_STOCKS = "https://www1.nseindia.com/live_market/dynaContent/live_watch/stock_watch/bankNiftyStockWatch.json"
 
-PATH_OI_INDICES = "api/option-chain-indices"
-PATH_OI_EQUITIES = "api/option-chain-equities"
-PATH_TURNOVER = "api/market-turnover"
+PATH_OI_INDICES = "/option-chain-indices"
+PATH_OI_EQUITIES = "/option-chain-equities"
+PATH_TURNOVER = "/market-turnover"
+PATH_SEARCH = "/search/autocomplete"
+PATH_GET_QUOTE = "/quote-equity"
 
 HEADER_NSE = {
     'accept-language': 'en-GB;q=0.5',

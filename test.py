@@ -1,6 +1,8 @@
 import asyncio
 import threading
+from collections.abc import MutableMapping
 from nseapi import NseApiAsync
+from nseapi.requester import Ticker
 
 
 nse = NseApiAsync()
@@ -24,18 +26,27 @@ loop_thread.start()
 # while not task_main.done():
 #     pass
 
-# Option Interest
-futs.append(
-        asyncio.run_coroutine_threadsafe(nse.market_turnover(), loop=loop)
-    )
-
-futs.append(
-    asyncio.run_coroutine_threadsafe(nse.option_chain("NIFTY", True), loop=loop)
-)
 
 # futs.append(
-#     asyncio.run_coroutine_threadsafe(turn_over(), loop=loop)
+#         asyncio.run_coroutine_threadsafe(nse.market_turnover(), loop=loop)
+#     )
+
+# futs.append(
+#     asyncio.run_coroutine_threadsafe(nse.option_chain("NIFTY", True), loop=loop)
 # )
+
+# futs.append(
+#     asyncio.run_coroutine_threadsafe(nse.search('reliance'), loop=loop)
+# )
+
+# futs.append(
+#     asyncio.run_coroutine_threadsafe(nse.get_quote('RELIANCE'), loop=loop)
+# )
+
+futs.append(
+    asyncio.run_coroutine_threadsafe(nse.corp_info('RELIANCE'), loop=loop)
+)
+
 # task_oi = [loop.create_task(get_oi(URL_OC), loop.create_task(URL_OC1))]
 # results = await asyncio.gather(*task_oi)
 
@@ -43,7 +54,10 @@ print("Check futs status")
 while len(futs) > 0:
     for f in futs:
         if f.done():
-            print(f.result())
+            result = f.result()
+            # t = Ticker(**result['symbols'][0])
+            if result is None:
+                print('No result')
             futs.remove(f)
             # print("Fut remove")
 
