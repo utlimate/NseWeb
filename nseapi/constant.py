@@ -22,10 +22,12 @@ PATH_META_INFO = "/equity-meta-info"
 PATH_MASTER = "/master-quote"
 PATH_DAILY_REPORT = "/merged-daily-reports"
 PATH_QUOTE_DERIVATIVE = "/quote-derivative"
-PATH_HISTORY_DERIVATIVES = "/fo/derivatives"
-PATH_HISTORY_DERIVATIVES_META = PATH_HISTORY_DERIVATIVES + "/meta"
 PATH_HISTORY = "/historical"
+PATH_HISTORY_DERIVATIVES = PATH_HISTORY + "/fo/derivatives"
+PATH_HISTORY_DERIVATIVES_META = PATH_HISTORY_DERIVATIVES + "/meta"
 PATH_HIS_EQUITY = PATH_HISTORY + "/cm/equity"
+PATH_BULKBLOCK = PATH_HISTORY + "/cm/bulkAndblock"
+PATH_HIGHLOW = PATH_HISTORY + "/cm/high-low"
 
 HEADER_NSE = {
     'accept-language': 'en-GB;q=0.5',

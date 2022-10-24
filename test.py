@@ -1,11 +1,11 @@
 import asyncio
 import threading
 from collections.abc import MutableMapping
-from nseapi import NseApiAsync
+from nseapi import BaseNseApiAsync
 from nseapi.requester import Ticker
 
 
-nse = NseApiAsync()
+nse = BaseNseApiAsync()
 
 # loop = asyncio.get_event_loop()
 # loop.run_until_complete(nse.main())
@@ -20,32 +20,36 @@ futs = []
 loop_thread = threading.Thread(target = loop.run_forever, daemon=True)
 loop_thread.start()
 
-# task_main = loop.create_task(nse.main())
+task_main = loop.create_task(nse.main())
 
 
-# while not task_main.done():
-#     pass
+while not task_main.done():
+    pass
 
 
 # futs.append(
 #         asyncio.run_coroutine_threadsafe(nse.market_turnover(), loop=loop)
 #     )
 
-# futs.append(
-#     asyncio.run_coroutine_threadsafe(nse.option_chain("NIFTY", True), loop=loop)
-# )
+option_chain = asyncio.run_coroutine_threadsafe(nse.option_chain("NIFTY", False), loop=loop)
+while not option_chain.done():
+    pass
+option_chain = option_chain.result()
+print(option_chain)
 
-# futs.append(
-#     asyncio.run_coroutine_threadsafe(nse.search('reliance'), loop=loop)
-# )
+# search = asyncio.run_coroutine_threadsafe(nse.search('reliance'), loop=loop)
+# while not search.done():
+#     pass
+# search = search.result()
+# print(search)
 
 # futs.append(
 #     asyncio.run_coroutine_threadsafe(nse.get_quote('RELIANCE'), loop=loop)
 # )
 
-futs.append(
-    asyncio.run_coroutine_threadsafe(nse.corp_info('RELIANCE'), loop=loop)
-)
+# futs.append(
+#     asyncio.run_coroutine_threadsafe(nse.corp_info('RELIANCE'), loop=loop)
+# )
 
 # task_oi = [loop.create_task(get_oi(URL_OC), loop.create_task(URL_OC1))]
 # results = await asyncio.gather(*task_oi)
