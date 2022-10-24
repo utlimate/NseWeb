@@ -203,12 +203,17 @@ class NseApi:
         self._loop.call_soon_threadsafe(self._loop.stop())
         return True
 
+
 class NseApiAsync:
     SECTION_TRADEINFO = "trade_info"
     SECTION_CORPINFO = "corp_info"
     SEGMENT_CASH = 'favCapital'
     SEGMENT_DERIVATIVE = 'favDerivatives'
     SEGMENT_DEBT = 'favDebt'
+    INSTRU_TYPE_FUT = 'FUTIDX'
+    INSTRU_TYPE_OPT = 'OPTIDX'
+    OPT_TYPE_CE = 'CE'
+    OPT_TYPE_PE = 'PE'
 
     RETRY_INTERVAL = 0.5    # In seconds
     MAX_RETRY = 3
@@ -445,6 +450,36 @@ class NseApiAsync:
 
         return await self._get(url=c.URL_API + c.PATH_GET_QUOTE, params={'symbol': symbol.upper(), 'section': section}, request_name='quote')
 
+    async def quote_derivative(self, symbol: str, identifier: str = None) -> dict:
+        """
+        quote about derivate
+
+        Args:
+            symbol (str): _description_
+            identifier (str, optional): _description_. Defaults to None.
+
+        Returns:
+            dict: {
+                "expiryDates": [str(dd-mmm-yyyy)],
+                "filter": {expiryDate: "Invalid date", strikePrice: ""},
+                "fut_timestamp": "21-Oct-2022 15:30:00",
+                "info":{symbol: "NIFTY", companyName: "NIFTY", identifier: "none", activeSeries: [], debtSeries: [],…},
+                "stocks":[
+                    {
+                        "marketDeptOrderBook": {totalBuyQuantity: 252650, totalSellQuantity: 627150,…},
+                        "metadata":{instrumentType: "Index Options", expiryDate: "27-Oct-2022", optionType: "Call", strikePrice: 17600,…},
+                        "underlyingValue": 17576.3,
+                        "volumeFreezeQuantity": 2801
+                    },
+                    ......
+                ],
+                "strikePrices": [0, 0, 0, 7500, 8500, 8500, 8700, 9000, 9000, 9500, 9500, 9700, 9900, 10000, 10000, 10000, 10000,…],
+                "underlyingValue: 17576.3,
+                "vfq":2801
+                }
+        """
+        return await self._get(url=c.URL_API + c.PATH_QUOTE_DERIVATIVE, params={'symbol': symbol.upper(), 'identifier': identifier}, request_name='quote_derivative')
+
     async def corp_info(self, symbol) -> dict:
         """
         corp_info about symbol
@@ -514,6 +549,78 @@ class NseApiAsync:
             }
         """
         return await self._get(url=c.URL_API + c.PATH_MARKETSTATUS, params=None, request_name='market_status')
+
+    async def history_deri(self, symbol: str, identifier: str = None, from_date: str = None, to_date: str = None,
+        option_type: str = None, strike_price: float = None, expiry_date: str= None, instrument_type: str = None) -> dict:
+        """
+        history data of derivative
+
+        _extended_summary_
+
+        Args:
+            from_date (str): 23-09-2022
+            to_date (str): 23-10-2022
+            option_type (str): CE
+            strike_price (float): 13950.00
+            expiry_date (str): 27-Oct-2022
+            instrument_type (str): OPTIDX
+            symbol (str): NIFTY
+
+        Returns:
+            dict: {
+                "data: [{_id: "6352990b5bacb48af147388a", FH_INSTRUMENT: "OPTIDX", FH_SYMBOL: "NIFTY",…},…],
+                "meta": {symbol: "NIFTY", optionType: "CE", expiryDate: "27-Oct-2022", strikePrice: "13950.00",…}
+            }
+        """
+        return await self._get(url=c.URL_API + c.PATH_HISTORY_DERIVATIVES, params={'symbol': symbol, 'identifier': identifier}, request_name='history_deri')
+
+    async def history_deri_meta(self, symbol: str, identifier: str = None) -> dict:
+        """
+        history data of derivative
+
+        _extended_summary_
+
+        Args:
+            symbol (str): NIFTY
+            indentifier (str): OPTIDXNIFTY27-10-2022CE13950.00
+
+        Returns:
+            dict: {
+                "data": [["FUTIDX", "OPTIDX"], ["CE", "PE"],…],
+                "from": "23-Sep-2022",
+                "symbol": "NIFTY",
+                "to": "23-Oct-2022",
+                "years": {
+                    2022: ["06-Oct-2022" "10-Nov-2022",…],…}
+            }
+        """
+        return await self._get(url=c.URL_API + c.PATH_HISTORY_DERIVATIVES_META,
+            params={'symbol': symbol, 'identifier': identifier}, request_name='history_deri_meta')
+
+    async def history_equity(self, symbol: str, from_date: str = None, to_date: str = None,
+        series: list = None) -> dict:
+        """
+        history data of equity
+
+        Usage: history_equity('RELIANCE') # will receive last 1 month data
+
+        Args:
+            from_date (str): 23-09-2022
+            to_date (str): 23-10-2022
+            option_type (str): CE
+            strike_price (float): 13950.00
+            expiry_date (str): 27-Oct-2022
+            instrument_type (str): OPTIDX
+            symbol (str): NIFTY
+
+        Returns:
+            dict: {
+                data:[{_id: "635289ffdd343400072e793e", CH_SYMBOL: "RELIANCE", CH_SERIES: "EQ", CH_MARKET_TYPE: "N",…},…]
+                meta:{series: ["EQ"], fromDate: "24-10-2021", toDate: "24-10-2022", symbols: ["RELIANCE", "RELIANCE"]}
+            }
+        """
+        return await self._get(url=c.URL_API + c.PATH_HISTORY_DERIVATIVES, params={'symbol': symbol, 'series': series, 'from': from_date, 'to':to_date}, request_name='history_deri')
+
 
 class Ticker():
     def __init__(self, *args, **kwargs) -> None:

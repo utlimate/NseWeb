@@ -122,6 +122,35 @@ class TestAsyncNseApi(unittest.TestCase):
         self.assertIn('symbol', result.keys(), msg=f"marketState is not available in results. Keys are {list(result.keys())}")
         self.assertNotEqual(len(result), 0, msg='Data is empty')
 
+    async def test_historyDerivativ(self):
+        fut = await self.nse.history_deri('RELIANCE')
+        result = fut.result(self.TIMEOUT)
+        self.assertIsNotNone(result, 'result is None')
+        self.assertIsInstance(result, dict, msg=f"response is not dictonary, but it is {type(result)}.")
+        self.assertIn('data', result.keys(), msg=f"data is not available in results. Keys are {list(result.keys())}")
+        self.assertNotEqual(len(result['data']), 0, msg='Data is empty')
+
+        fut = await self.nse.history_equity('RELIANCE', from_date='24-09-2022', to_date='24-10-2022')
+        result = fut.result(self.TIMEOUT)
+        self.assertIsNotNone(result, 'result is None')
+        self.assertIsInstance(result, dict, msg=f"response is not dictonary, but it is {type(result)}.")
+        self.assertIn('data', result.keys(), msg=f"data is not available in results. Keys are {list(result.keys())}")
+        self.assertNotEqual(len(result['data']), 0, msg='Data is empty')
+
+    async def test_historyEquity(self):
+        fut = await self.nse.history_equity('RELIANCE')
+        result = fut.result(self.TIMEOUT)
+        self.assertIsNotNone(result, 'result is None')
+        self.assertIsInstance(result, dict, msg=f"response is not dictonary, but it is {type(result)}.")
+        self.assertIn('data', result.keys(), msg=f"data is not available in results. Keys are {list(result.keys())}")
+        self.assertNotEqual(len(result['data']), 0, msg='Data is empty')
+
+        fut = await self.nse.history_equity('RELIANCE', from_date='24-09-2022', to_date='24-10-2022')
+        result = fut.result(self.TIMEOUT)
+        self.assertIsNotNone(result, 'result is None')
+        self.assertIsInstance(result, dict, msg=f"response is not dictonary, but it is {type(result)}.")
+        self.assertIn('data', result.keys(), msg=f"data is not available in results. Keys are {list(result.keys())}")
+        self.assertNotEqual(len(result['data']), 0, msg='Data is empty')
 
 if __name__ == '__main__':
     unittest.main()

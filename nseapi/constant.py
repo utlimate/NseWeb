@@ -4,6 +4,7 @@ TODAY_DATE = None
 
 URL_MAIN = "https://www.nseindia.com"
 URL_API = URL_MAIN + "/api"
+URL_HISTORICAL = URL_API + "/historical"
 URL_INDICES = "https://www.nseindia.com/api/option-chain-indices"
 URL_EQUITIES = "https://www.nseindia.com/api/option-chain-equities"
 URL_MAIN = "https://www.nseindia.com"
@@ -20,6 +21,11 @@ PATH_MARKETSTATUS = "/marketStatus"
 PATH_META_INFO = "/equity-meta-info"
 PATH_MASTER = "/master-quote"
 PATH_DAILY_REPORT = "/merged-daily-reports"
+PATH_QUOTE_DERIVATIVE = "/quote-derivative"
+PATH_HISTORY_DERIVATIVES = "/fo/derivatives"
+PATH_HISTORY_DERIVATIVES_META = PATH_HISTORY_DERIVATIVES + "/meta"
+PATH_HISTORY = "/historical"
+PATH_HIS_EQUITY = PATH_HISTORY + "/cm/equity"
 
 HEADER_NSE = {
     'accept-language': 'en-GB;q=0.5',
