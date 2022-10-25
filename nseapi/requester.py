@@ -18,7 +18,13 @@ class BaseApiAsync(BaseRequester):
     SERIES = ["AF", "BL", "EQ", "RL"]
 
     RETRY_INTERVAL = 0.5    # In seconds
-    MAX_RETRY = 3
+    MAX_RETRY = 0
+
+    def __init__(self, log_path: str = None, max_retry: int = None) -> None:
+        super(BaseApiAsync, self).__init__(log_path)
+        if isinstance(max_retry, int):
+            self.MAX_RETRY = max_retry
+
 
     async def option_chain(self, symbol: str, index: bool) -> dict:
         """
@@ -566,7 +572,7 @@ class BaseSymbolApiAsync(BaseApiAsync):
             return await super().history_deri(self.symbol, identifier, from_date,to_date, option_type, strike_price, expiry_date,
             instrument_type)
         else:
-            raise Type("Symbol is not derivative")
+            raise TypeError("Symbol is not derivative")
 
     async def history_deri_meta(self, identifier: str = None) -> dict:
         """
@@ -592,7 +598,7 @@ class BaseSymbolApiAsync(BaseApiAsync):
         if self.symbol_type == 'derivatives':
             return await super().history_deri_meta(self.symbol, identifier)
         else:
-            raise Type("Symbol is not derivative")
+            raise TypeError("Symbol is not derivative")
 
     async def history_equity(self, symbol: str, from_date: str = None, to_date: str = None,
         series: list = None) -> dict:

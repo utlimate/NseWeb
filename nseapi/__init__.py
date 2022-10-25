@@ -3,10 +3,11 @@ from nseapi.requester import BaseSymbolApiAsync as _BaseSymbolApiAsync
 import nseapi.constant as _c
 from pathlib import Path as _Path
 from datetime import datetime as _datetime
+import asyncio
 
 _c.HOME_DIR_PATH = _Path(__file__).parent
 _c.TODAY_DATE = _datetime.now()
-__version__ = '0.0.12'
+__version__ = '0.0.13'
 
 
 class NseApiAsync(_BaseNseApiAsync):
@@ -16,7 +17,6 @@ class NseApiAsync(_BaseNseApiAsync):
         res_data = None
         tryNo = 1
         while True:
-        # for i in range(1, self.MAX_RETRY + 1):
             self.logger.debug(f'{request_name} - Sending Request - Try: {tryNo} - params: {str(params)}')
 
             try:
@@ -36,8 +36,11 @@ class NseApiAsync(_BaseNseApiAsync):
 
             except Exception as e:
                 self.logger.exception(f'Name:{request_name}, Params: {params}', exc_info=True)
-                t.sleep(self.RETRY_INTERVAL)
+                await asyncio.sleep(self.RETRY_INTERVAL)
             
+            if tryNo >= self.MAX_RETRY and self.MAX_RETRY > 0:
+                raise RuntimeError(f"Maximum retry exhausted")
+
             tryNo += 1
     
         return res_data
@@ -70,8 +73,11 @@ class SymbolApiAsync(_BaseSymbolApiAsync):
 
             except Exception as e:
                 self.logger.exception(f'Name:{request_name}, Params: {params}', exc_info=True)
-                t.sleep(self.RETRY_INTERVAL)
+                await asyncio.sleep(self.RETRY_INTERVAL)
             
+            if tryNo >= self.MAX_RETRY and self.MAX_RETRY > 0:
+                raise RuntimeError(f"Maximum retry exhausted")
+
             tryNo += 1
     
         return res_data
