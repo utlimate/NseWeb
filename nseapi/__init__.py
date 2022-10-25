@@ -1,4 +1,3 @@
-from nseapi.logger import get_logger
 from nseapi.requester import BaseNseApiAsync as _BaseNseApiAsync
 from nseapi.requester import BaseSymbolApiAsync as _BaseSymbolApiAsync
 import nseapi.constant as _c
@@ -7,7 +6,7 @@ from datetime import datetime as _datetime
 
 _c.HOME_DIR_PATH = _Path(__file__).parent
 _c.TODAY_DATE = _datetime.now()
-__version__ = '0.0.11'
+__version__ = '0.0.12'
 
 
 class NseApiAsync(_BaseNseApiAsync):

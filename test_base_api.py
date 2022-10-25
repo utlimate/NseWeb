@@ -1,6 +1,7 @@
 import unittest
 from nseapi import _BaseNseApiAsync
 
+
 class TestAsyncBaseNseApi(unittest.IsolatedAsyncioTestCase):
     TIMEOUT = 5
 

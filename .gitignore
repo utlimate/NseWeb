@@ -10,6 +10,8 @@ NseWeb.egg-info
 __pycache__
 dist
 build
+garbage
 ddo_ahd.csv
 .gitignore
 nseapi/import csv.py
+testAsyncio.py

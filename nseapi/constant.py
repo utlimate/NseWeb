@@ -11,6 +11,7 @@ URL_MAIN = "https://www.nseindia.com"
 URL_STOCK_LIST = "https://www.nseindia.com/api/equity-stockIndices"
 URL_BANKNIFTY_STOCKS = "https://www1.nseindia.com/live_market/dynaContent/live_watch/stock_watch/bankNiftyStockWatch.json"
 
+#Main API
 PATH_OI_INDICES = "/option-chain-indices"
 PATH_OI_EQUITIES = "/option-chain-equities"
 PATH_TURNOVER = "/market-turnover"
@@ -28,6 +29,8 @@ PATH_HISTORY_DERIVATIVES_META = PATH_HISTORY_DERIVATIVES + "/meta"
 PATH_HIS_EQUITY = PATH_HISTORY + "/cm/equity"
 PATH_BULKBLOCK = PATH_HISTORY + "/cm/bulkAndblock"
 PATH_HIGHLOW = PATH_HISTORY + "/cm/high-low"
+
+#Finance API
 
 HEADER_NSE = {
     'accept-language': 'en-GB;q=0.5',
