@@ -611,6 +611,7 @@ class BaseApiAsync:
 
         return await self._get(url=c.URL_API + c.PATH_HIGHLOW, params=params, request_name='buldandblock')
 
+
 class BaseSymbolApiAsync(BaseApiAsync):
     
     def __init__(self,data: dict, log_path: str = None) -> None:
