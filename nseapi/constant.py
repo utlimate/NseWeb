@@ -31,6 +31,7 @@ PATH_BULKBLOCK = PATH_HISTORY + "/cm/bulkAndblock"
 PATH_HIGHLOW = PATH_HISTORY + "/cm/high-low"
 
 #Finance API
+PATH_FIN_RESULTS = URL_API + "/corporates-financial-results"
 
 HEADER_NSE = {
     'accept-language': 'en-GB;q=0.5',

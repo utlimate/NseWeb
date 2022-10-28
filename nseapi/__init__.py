@@ -7,7 +7,7 @@ import asyncio
 
 _c.HOME_DIR_PATH = _Path(__file__).parent
 _c.TODAY_DATE = _datetime.now()
-__version__ = '0.0.13'
+__version__ = '0.0.14'
 
 
 class NseApiAsync(_BaseNseApiAsync):

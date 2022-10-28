@@ -153,6 +153,11 @@ class TestNseApiAsync(unittest.IsolatedAsyncioTestCase):
         self.assertIn('_id', result.keys(), msg=f"data is not available in results. Keys are {list(result.keys())}")
 
 
+if __name__ == '__main__':
+    unittest.main()
+
+
+
 # class TestAsyncNseApi(unittest.TestCase):
 #     TIMEOUT = 5
 

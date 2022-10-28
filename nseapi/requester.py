@@ -1,6 +1,3 @@
-import json
-import pickle
-import threading
 import nseapi.constant as c
 from nseapi.generic import BaseRequester
 

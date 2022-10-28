@@ -32,7 +32,7 @@ class AsyncLoopThread(Thread):
         self.loop = asyncio.new_event_loop()
 
     def run(self):
-        asyncio.set_event_loop(self.loop)
+        # asyncio.set_event_loop(self.loop)
         self.loop.run_forever()
 
     def stop(self):
@@ -83,12 +83,17 @@ def get_logger(name: str, log_dir: Union[_Path, str]=None) -> _logging.Logger:
 
 
 class BaseRequester:
-    TIMEOUT = 5
+    TIMEOUT = 0
 
-    def __init__(self, log_path: str = None) -> None:
-        self.session = aiohttp.ClientSession(headers=c.HEADER_NSE)
+    def __init__(self, log_path: str = None, parent = None) -> None:
+        if parent is None:
+            self.session = aiohttp.ClientSession(headers=c.HEADER_NSE)
+            self.main_page_loaded = False
+        else:
+            self.session = parent.session
+            self.main_page_loaded = parent.main_page_loaded
+        
         self.logger = get_logger(self.__class__.__name__, log_path)
-        self.main_page_loaded = False
 
     async def _get(self, url, params=None, request_name=None, timeout=TIMEOUT):
         self.logger.debug(f'{request_name} - Sending Request - params: {str(params)}')
@@ -114,3 +119,59 @@ class BaseRequester:
         else:
             self.logger.error(f"Loading Main Page Unsuccessful: Status Code - {res.status}")
             return False
+
+
+class MyObj(object):
+    def __init__(self, *args, **kwargs):
+        for a in args:
+            if isinstance(a, str):
+                self[a.replace("-", "_").replace(" ", "").lower()] = a
+
+        for k , v in kwargs.items():
+            if isinstance(k, str):
+                self[k.replace(" ", "").lower()] = v
+
+    def __setitem__(self, key, item):
+        self.__dict__[key] = item
+
+    def __getitem__(self, key):
+        return self.__dict__[key]
+
+    def __repr__(self):
+        return repr(self.__dict__)
+
+    def __len__(self):
+        return len(self.__dict__)
+
+    def __delitem__(self, key):
+        del self.__dict__[key]
+
+    def clear(self):
+        return self.__dict__.clear()
+
+    def copy(self):
+        return self.__dict__.copy()
+
+    def has_key(self, k):
+        return k in self.__dict__
+
+    def update(self, *args, **kwargs):
+        return self.__dict__.update(*args, **kwargs)
+
+    def keys(self):
+        return self.__dict__.keys()
+
+    def values(self):
+        return self.__dict__.values()
+
+    def items(self):
+        return self.__dict__.items()
+
+    def pop(self, *args):
+        return self.__dict__.pop(*args)
+
+    def __contains__(self, item):
+        return item in self.__dict__
+
+    def __iter__(self):
+        return iter(self.__dict__)
