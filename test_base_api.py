@@ -1,12 +1,12 @@
 import unittest
-from nseapi import _BaseNseApiAsync
+from scrapper.nseapi.requester import BaseNseApiAsync
 
 
 class TestAsyncBaseNseApi(unittest.IsolatedAsyncioTestCase):
     TIMEOUT = 5
 
     async def asyncSetUp(self):
-        self.nse = _BaseNseApiAsync()
+        self.nse = BaseNseApiAsync()
         self.nse.main()
 
     async def test_marketTurnover(self):
@@ -38,14 +38,14 @@ class TestAsyncBaseNseApi(unittest.IsolatedAsyncioTestCase):
         self.assertNotEqual(len(result['symbols']), 0, msg='Data is empty')
 
     async def test_quote(self):
-        result = await self.nse.quote('RELIANCE', section=_BaseNseApiAsync.SECTION_TRADEINFO)
+        result = await self.nse.quote('RELIANCE', section=BaseNseApiAsync.SECTION_TRADEINFO)
         self.assertIsNotNone(result, 'result is None')
         self.assertTrue(result.ok, f"Response is not valid, Status Code:{result.status}")
         result = await result.json()
         self.assertIsInstance(result, dict, msg=f"response is not dictonary, but it is {type(result)}.")
         self.assertNotEqual(len(result), 0, msg='Data is empty')
 
-        result = await self.nse.quote('RELIANCE', section=_BaseNseApiAsync.SECTION_CORPINFO)
+        result = await self.nse.quote('RELIANCE', section=BaseNseApiAsync.SECTION_CORPINFO)
         self.assertIsNotNone(result, 'result is None')
         self.assertTrue(result.ok, f"Response is not valid, Status Code:{result.status}")
         result = await result.json()
@@ -125,7 +125,7 @@ class TestAsyncBaseNseApi(unittest.IsolatedAsyncioTestCase):
 
     async def test_dailyReport(self):
         # Cash
-        result = await self.nse.daily_report(_BaseNseApiAsync.SEGMENT_CASH)
+        result = await self.nse.daily_report(BaseNseApiAsync.SEGMENT_CASH)
         self.assertIsNotNone(result, 'result is None')
         self.assertTrue(result.ok, f"Response is not valid, Status Code:{result.status}")
         result = await result.json()
@@ -133,7 +133,7 @@ class TestAsyncBaseNseApi(unittest.IsolatedAsyncioTestCase):
         self.assertNotEqual(len(result), 0, msg='Data is empty')
 
         # Derivative
-        result = await self.nse.daily_report(_BaseNseApiAsync.SEGMENT_DERIVATIVE)
+        result = await self.nse.daily_report(BaseNseApiAsync.SEGMENT_DERIVATIVE)
         self.assertIsNotNone(result, 'result is None')
         self.assertTrue(result.ok, f"Response is not valid, Status Code:{result.status}")
         result = await result.json()
@@ -141,7 +141,7 @@ class TestAsyncBaseNseApi(unittest.IsolatedAsyncioTestCase):
         self.assertNotEqual(len(result), 0, msg='Data is empty')
 
         # Debt
-        result = await self.nse.daily_report(_BaseNseApiAsync.SEGMENT_DEBT)
+        result = await self.nse.daily_report(BaseNseApiAsync.SEGMENT_DEBT)
         self.assertIsNotNone(result, 'result is None')
         self.assertTrue(result.ok, f"Response is not valid, Status Code:{result.status}")
         result = await result.json()

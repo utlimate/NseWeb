@@ -1,5 +1,5 @@
 import unittest
-from nseapi import NseApiAsync
+from scrapper.nseapi import NseApiAsync
 
 class TestNseApiAsync(unittest.IsolatedAsyncioTestCase):
     TIMEOUT = 5

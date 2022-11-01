@@ -1,5 +1,5 @@
-import nseapi.constant as c
-from nseapi.generic import BaseRequester
+import scrapper.nseapi.constant as c
+from scrapper.nseapi.generic import BaseRequester
 
 
 class BaseApiAsync(BaseRequester):

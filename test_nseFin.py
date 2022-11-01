@@ -1,5 +1,5 @@
 import unittest
-from nseapi.financial.requester import BaseFinApiAsync, FinApiAsync
+from scrapper.nseapi.financial.requester import BaseFinApiAsync, FinApiAsync
 
 
 class TestAsyncBaseNseFinApi(unittest.IsolatedAsyncioTestCase):

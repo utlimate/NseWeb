@@ -1,12 +1,10 @@
 import ast
 import asyncio
 from datetime import datetime
-from os import link
-import requests
-from nseapi.generic import BaseRequester, MyObj, validate_status, AsyncLoopThread
-from nseapi.requester import BaseApiAsync
+from scrapper.nseapi.generic import BaseRequester, MyObj, validate_status, AsyncLoopThread
+from scrapper.nseapi.requester import BaseApiAsync
 import xml.etree.ElementTree as ET
-import nseapi.constant as _cont
+import scrapper.nseapi.constant as _cont
 
 
 class BaseFinApiAsync(BaseRequester):
@@ -15,13 +13,16 @@ class BaseFinApiAsync(BaseRequester):
 
     def __init__(self, parent:BaseApiAsync = None, max_retry: int = 0, log_path: str = None) -> None:
 
-        if parent is not None:
-            self.parent = parent
-            self.logger = parent.logger
-        else:
-            super(BaseFinApiAsync, self).__init__(log_path)
+        # if parent is not None:
+        #     self.parent = parent
+        #     self.logger = parent.logger
+        #     self.main_page_loaded = False
+        #     self.session = parent.session
+        # else:
+        #     super(BaseFinApiAsync, self).__init__(log_path)
 
-        self.thread = AsyncLoopThread()
+        BaseRequester.__init__(self, log_path=log_path, parent=parent)
+    
         if isinstance(max_retry, int):
             self.MAX_RETRY = max_retry
 

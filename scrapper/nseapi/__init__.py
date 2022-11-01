@@ -1,17 +1,23 @@
-from nseapi.requester import BaseNseApiAsync as _BaseNseApiAsync
-from nseapi.requester import BaseSymbolApiAsync as _BaseSymbolApiAsync
-import nseapi.constant as _c
+import scrapper
+from scrapper.nseapi.requester import BaseNseApiAsync
+from scrapper.nseapi.requester import BaseSymbolApiAsync
+import scrapper.nseapi.constant as _c
 from pathlib import Path as _Path
 from datetime import datetime as _datetime
 import asyncio
+from .financial.requester import FinApiAsync
 
 _c.HOME_DIR_PATH = _Path(__file__).parent
 _c.TODAY_DATE = _datetime.now()
-__version__ = '0.0.14'
+__version__ = scrapper.__version__
 
 
-class NseApiAsync(_BaseNseApiAsync):
+class NseApiAsync(BaseNseApiAsync):
     TIMEOUT = 4
+
+    def __init__(self, log_path: str = None, max_retry: int = None) -> None:
+        super().__init__(log_path, max_retry)
+        self.finance = FinApiAsync(self, max_retry)
 
     async def _get(self, url, params=None, request_name=None, timeout=TIMEOUT):
         res_data = None
@@ -46,7 +52,7 @@ class NseApiAsync(_BaseNseApiAsync):
         return res_data
 
 
-class SymbolApiAsync(_BaseSymbolApiAsync):
+class SymbolApiAsync(BaseSymbolApiAsync):
     TIMEOUT = 4
 
     async def _get(self, url, params=None, request_name=None, timeout=TIMEOUT):
