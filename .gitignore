@@ -20,3 +20,5 @@ nseapi/financial/testFinancial.py
 instantclient_21_7
 scrapper/nseapi/financial/Ind AS Taxonomy-2020-03-31 CSV.csv
 scrapper/nseapi/import csv.py
+tmp_test.py
+.pylintrc

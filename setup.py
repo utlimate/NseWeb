@@ -1,10 +1,10 @@
 from setuptools import setup
-import nseapi
+import scrapper
 
 setup(
     name='NseWeb',
-    version=nseapi.__version__,
-    packages=['nseapi'],
+    version=scrapper.__version__,
+    packages=['scrapper'],
     url='https://github.com/sachgbhatiya/NseWeb',
     license='',
     author='Sachin Bhatiya',

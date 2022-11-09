@@ -22,7 +22,6 @@ class BaseApiAsync(BaseRequester):
         if isinstance(max_retry, int):
             self.MAX_RETRY = max_retry
 
-
     async def option_chain(self, symbol: str, index: bool) -> dict:
         """
         option_chain Get Option Chain Data
