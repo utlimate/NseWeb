@@ -1,0 +1,19 @@
+import unittest
+from scrapper.gsheet.client import SheetApiClient
+
+
+class TestGsheet(unittest.IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
+        self.sheet_api = SheetApiClient()
+        await self.sheet_api.loadasyncsheetservice("nse-oi-cred.json")
+
+    async def test_get_spredsheet(self):
+        n_oi_analysis = "1TOjkP1dvv5euuB0FKvnHI2DBUGpbycOMpqhLCeESJ6g"
+        spredsheet = await self.sheet_api.get_shreadsheet(n_oi_analysis)
+        oc_sheet = spredsheet.sheet_by_title("Option Chain")
+        values = await spredsheet.get_values('Option Chain!1:1')
+        print("test")
+
+
+if __name__ == '__main__':
+    unittest.main()

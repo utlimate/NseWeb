@@ -95,7 +95,7 @@ def get_logger(name: str, log_dir: Union[_Path, str]=None) -> _logging.Logger:
 
 
 class BaseRequester:
-    TIMEOUT = 0.2
+    TIMEOUT = None
 
     def __init__(self, loop: asyncio.windows_events.ProactorEventLoop = None, log_path: str = None, parent = None) -> None:
         # if parent is None:
@@ -109,7 +109,7 @@ class BaseRequester:
         self._getting_main = False
         
         if loop is not None:
-            loop.create_task(self.init())
+            loop.create_task(self.init(parent))
         
         self.logger = get_logger(self.__class__.__name__, log_path)
         self._wait_for_main = asyncio.Event()
@@ -125,16 +125,19 @@ class BaseRequester:
         self.main_page_loaded = True
         self._wait_for_main.set()
         
-    async def init(self, parent = None):
+    async def init(self, parent = None, timeout: aiohttp.ClientTimeout = None):
         if parent is None:
-            self.session = aiohttp.ClientSession(headers=c.HEADER_NSE)
+            if timeout is not None:
+                self.session = aiohttp.ClientSession(headers=c.HEADER_NSE, timeout=timeout)
+            else:
+                self.session = aiohttp.ClientSession(headers=c.HEADER_NSE)
             self.main_page_loaded = False
         else:
             self.session = parent.session
             self.main_page_loaded = parent.main_page_loaded
         self._wait_for_init.set()
 
-    async def _get(self, url, params=None, request_name=None, timeout=TIMEOUT):
+    async def _get(self, url, params=None, request_name=None):
         self.logger.debug(f'{request_name} - Sending Request - params: {str(params)}, wait for main')
     
         try:
@@ -143,7 +146,7 @@ class BaseRequester:
                 await self.main()
             
             await self._wait_for_main.wait()        
-            res = await self.session.get(url, params=params, timeout=timeout)
+            res = await self.session.get(url, params=params)
             self.logger.debug(f'{request_name} - Response Received - params: {str(params)}')
             return res
         except Exception as e:
@@ -180,6 +183,7 @@ class BaseRequester:
             _type_: _description_
         """
         await self.session.close()
+
 
 class MyObj(object):
     def __init__(self, *args, **kwargs):

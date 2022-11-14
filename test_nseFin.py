@@ -5,7 +5,8 @@ from scrapper.nseapi.financial.requester import BaseFinApiAsync, FinApiAsync
 class TestAsyncBaseNseFinApi(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.nse = BaseFinApiAsync()
-        self.nse.main()
+        await self.nse.init()
+        await self.nse.main()
 
     async def test_results(self):
         result = await self.nse.results('equities', 'Reliance')
@@ -20,7 +21,8 @@ class TestAsyncBaseNseFinApi(unittest.IsolatedAsyncioTestCase):
 class TestAsyncNseFinApi(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.nse = FinApiAsync()
-        self.nse.main()
+        await self.nse.init()
+        await self.nse.main()
 
     async def test_results(self):
         result = await self.nse.results('equities', 'reliance')

@@ -39,7 +39,7 @@ class NseApiAsync(BaseNseApiAsync):
                 )
 
             try:
-                res = await super()._get(url, params, request_name, timeout)
+                res = await super()._get(url, params, request_name)
                 if res.ok:
                     self.logger.debug(f"{request_name} - Params: {params} - Response OK")
                     res_data = await res.json()

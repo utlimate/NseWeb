@@ -1,12 +1,14 @@
 import unittest
 from scrapper.nseapi import NseApiAsync
 
+
 class TestNseApiAsync(unittest.IsolatedAsyncioTestCase):
     TIMEOUT = 5
 
     async def asyncSetUp(self):
         self.nse = NseApiAsync()
-        self.nse.main()
+        await self.nse.init()
+        await self.nse.main()
 
     async def test_marketTurnover(self):
         result = await self.nse.market_turnover()
